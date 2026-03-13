@@ -26,15 +26,21 @@ const db = {
 // ═══════════════════════════════════════════
 //  Rotation Algorithm
 // ═══════════════════════════════════════════
+function getRestCount(playerCount) {
+  // 5人=休み0, 6人=休み1, 7人以上=休み2
+  return Math.max(0, Math.min(2, playerCount - 5));
+}
+
 function generateSchedule(playerCount, totalRounds, lateIndices = []) {
   if (playerCount < 5) return [];
 
-  // Reorder: put late players at indices 2,3 (rest positions for R0)
+  const restCount = getRestCount(playerCount);
+
+  // Reorder: put late players at rest positions for R0
   let order = Array.from({ length: playerCount }, (_, i) => i);
-  if (lateIndices.length > 0) {
+  if (lateIndices.length > 0 && restCount > 0) {
     const nonLate = order.filter((i) => !lateIndices.includes(i));
     const late = order.filter((i) => lateIndices.includes(i));
-    // Place late players at positions 2,3,...
     const reordered = [];
     let lateIdx = 0, nonLateIdx = 0;
     for (let pos = 0; pos < playerCount; pos++) {
@@ -51,7 +57,10 @@ function generateSchedule(playerCount, totalRounds, lateIndices = []) {
   for (let r = 0; r < totalRounds; r++) {
     const c = r % playerCount;
     const gk = order[c];
-    const rest = [order[(c + 2) % playerCount], order[(c + 3) % playerCount]];
+    const rest = [];
+    for (let i = 0; i < restCount; i++) {
+      rest.push(order[(c + 2 + i) % playerCount]);
+    }
     schedule.push({ gk, rest });
   }
   return schedule;
@@ -201,6 +210,7 @@ function MembersTab({ allMembers, setAllMembers, selected, setSelected, lateIds,
                   }}
                 >
                   <span style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{m.name}</span>
+                  {selectedMembers.length >= 6 && (
                   <button
                     onClick={() => toggleLate(m.id)}
                     style={{
@@ -215,6 +225,7 @@ function MembersTab({ allMembers, setAllMembers, selected, setSelected, lateIds,
                   >
                     {isLate ? "遅刻⚠" : "遅刻?"}
                   </button>
+                  )}
                   <button
                     onClick={() => toggleSelect(m.id)}
                     style={{ color: "#64748b", fontSize: 18, padding: "0 2px", lineHeight: 1 }}
@@ -249,7 +260,7 @@ function MembersTab({ allMembers, setAllMembers, selected, setSelected, lateIds,
           {canGenerate ? `⚽ ${selectedMembers.length}人でローテーション作成` : `あと${Math.max(0, 5 - selectedMembers.length)}人選んでください`}
         </button>
         {!canGenerate && selectedMembers.length > 0 && (
-          <div style={{ textAlign: "center", fontSize: 12, color: "#f59e0b", marginTop: 6 }}>※ 最低5人必要です（FP2名 + GK1名 + 休み2名）</div>
+          <div style={{ textAlign: "center", fontSize: 12, color: "#f59e0b", marginTop: 6 }}>※ 最低5人必要です（FP4名 + GK1名）</div>
         )}
       </div>
 
@@ -419,9 +430,10 @@ function NowTab({ schedule, members, currentRound, totalRounds, setCurrentRound 
       </div>
 
       {/* Rest */}
+      {restMembers.length > 0 && (
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, marginBottom: 8, letterSpacing: "0.5px" }}>💤 休み</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: restMembers.length === 1 ? "1fr" : "1fr 1fr", gap: 10 }}>
           {restMembers.map((m) => (
             <div key={m?.id} style={{ background: "linear-gradient(135deg,#334155,#1e293b)", borderRadius: 16, padding: "18px 14px", textAlign: "center", border: "1px solid #475569" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#94a3b8" }}>{m?.name}</div>
@@ -430,6 +442,7 @@ function NowTab({ schedule, members, currentRound, totalRounds, setCurrentRound 
           ))}
         </div>
       </div>
+      )}
 
       {/* Next preview */}
       {currentRound < totalRounds - 1 && (
