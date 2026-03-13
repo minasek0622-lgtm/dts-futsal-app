@@ -782,7 +782,7 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 1, padding: "22px 16px 0", textAlign: "center" }}>
         <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: "1px", marginBottom: 2 }}>
           <span style={{ background: "linear-gradient(90deg,#38bdf8,#2563eb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            ⚽ フットサル ローテーション
+            フットサル ローテーション
           </span>
         </div>
 
